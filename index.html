@@ -64,7 +64,7 @@
             max-width: 500px;
             width: 100%;
             z-index: 10;
-            touch-action: manipulation; /* 消除雙擊縮放延遲 */
+            touch-action: manipulation;
         }
 
         .punch-card {
@@ -94,7 +94,7 @@
             cursor: default;
         }
 
-        /* 控制按鈕與 Logo */
+        /* 控制按鈕 */
         .music-control {
             position: fixed;
             top: 20px;
@@ -156,7 +156,7 @@
         .modal-content {
             background: #fff;
             color: #333;
-            padding: clamp(24px, 6vw, 36px);
+            padding: clamp(20px, 6vw, 36px);
             border-radius: 28px;
             max-width: 480px;
             width: 100%;
@@ -188,7 +188,7 @@
             transform: scale(0.97);
         }
 
-        /* 轉盤樣式優化 */
+        /* 轉盤樣式 */
         .wheel-container {
             position: relative;
             width: clamp(240px, 65vw, 300px);
@@ -239,17 +239,18 @@
             pointer-events: none;
         }
 
-        /* 精確角度標籤 */
+        /* 獎勵標籤角度校準 */
+        .r-label-0 { transform: rotate(45deg); color: white; font-size: 1.5rem; }
+        .r-label-1 { transform: rotate(135deg); color: #d62828; font-size: 1.5rem; }
+        .r-label-2 { transform: rotate(225deg); color: white; font-size: 1.5rem; }
+        .r-label-3 { transform: rotate(315deg); color: #d62828; font-size: 1.5rem; }
+
+        /* 處罰標籤角度校準 */
         .p-label-0 { transform: rotate(36deg); color: white; }
         .p-label-1 { transform: rotate(108deg); color: white; }
         .p-label-2 { transform: rotate(180deg); color: white; }
         .p-label-3 { transform: rotate(252deg); color: white; }
         .p-label-4 { transform: rotate(324deg); color: white; }
-
-        .r-label-0 { transform: rotate(45deg); color: white; font-size: 1.5rem; }
-        .r-label-1 { transform: rotate(135deg); color: #d62828; font-size: 1.5rem; }
-        .r-label-2 { transform: rotate(225deg); color: white; font-size: 1.5rem; }
-        .r-label-3 { transform: rotate(315deg); color: #d62828; font-size: 1.5rem; }
 
         .wheel-pointer {
             position: absolute;
@@ -264,20 +265,47 @@
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
         }
 
+        /* 底部設計者資訊 - 手機適應 */
         .footer-info {
             margin-top: auto;
-            padding: 40px 0 20px;
+            padding: 40px 10px 20px;
             text-align: center;
+            z-index: 10;
+            width: 100%;
+        }
+
+        .footer-info a {
             color: rgba(255, 255, 255, 1);
-            font-size: 1.1rem;
+            font-size: clamp(0.7rem, 4vw, 1.15rem); /* 手機自動縮小 */
             font-weight: 900;
-            letter-spacing: 1.5px;
+            letter-spacing: 1px;
+            white-space: nowrap; /* 確保不換行 */
+            display: inline-block;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+
+        .footer-info a:hover {
+            opacity: 0.8;
+            text-decoration: underline;
         }
 
         #youtube-player-container {
             position: fixed;
             width: 1px; height: 1px;
             left: -100px; opacity: 0;
+        }
+
+        .explanation-box {
+            background-color: #fff9db;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: left;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-top: 15px;
+            border-left: 5px solid #fcc419;
+            font-weight: 700;
         }
     </style>
 </head>
@@ -298,7 +326,11 @@
 
     <div class="grid-container" id="gridContainer"></div>
 
-    <div class="footer-info">設計者：<b>愛迪樂 鍾孟修 職能治療師</b></div>
+    <div class="footer-info">
+        <a href="https://www.facebook.com/profile.php?id=100063748491881" target="_blank">
+            設計者：愛迪樂 鍾孟修 職能治療師
+        </a>
+    </div>
 
     <a href="https://adlers.tw/" target="_blank" class="logo-link">
         <img src="https://adlers.tw/wp-content/uploads/2021/05/ADL-LOGO_v2.png" alt="愛迪樂 Logo" class="logo-img">
@@ -372,6 +404,7 @@
             { q: "古人在過年時會喝「屠蘇酒」，其飲用順序有何特色？", a: ["長者先喝", "由幼及長", "全家一起乾杯"], correct: 1, exp: "古人認為年少者增歲值得慶祝，長者失歲令人感傷，故讓年少者先喝，長者最後喝。" }
         ];
 
+        // 轉盤內容修正：金額與文字完全對齊
         const rewards = ["200", "600", "800", "1000"];
         const punishs = ["馬年祝賀詞", "馬相關成語", "感謝的人事物", "新年新希望", "去年重要的成長"];
         const praiseWords = ["馬到成功！", "龍馬精神！", "萬馬奔騰！", "一馬當先！", "才華橫溢！"];
@@ -447,7 +480,6 @@
         function handlePoke(index, element) {
             if (pokedIndices.has(index)) return;
             playSfx('pop');
-            // Try playing YT if blocked
             if (ytPlayer && !isMuted) ytPlayer.playVideo();
             currentIdx = index; pokedIndices.add(index);
             element.classList.add('poked'); showQuestion(index);
@@ -522,19 +554,19 @@
             const resMain = document.getElementById('resultTextMain');
             const resSub = document.getElementById('resultTextSub');
             
-            spinBtn.innerText = "正在轉動運勢中...";
+            spinBtn.innerText = "好運轉動中...";
 
             let targetIdx, totalDeg;
             if (lastResultIsCorrect) {
                 targetIdx = Math.floor(Math.random() * 4);
-                // Center parts: -45 (200), -135 (1000), -225 (800), -315 (600)
-                const offsets = [-45, -315, -225, -135];
-                totalDeg = (360 * 7) + (360 + offsets[targetIdx]);
+                // 正確映射：200(-45), 600(-135), 800(-225), 1000(-315)
+                const offsets = [-45, -135, -225, -315];
+                totalDeg = (360 * 8) + (offsets[targetIdx]);
             } else {
                 targetIdx = Math.floor(Math.random() * 5);
-                // Center parts: -36, -108, -180, -252, -324
+                // 正確映射：馬年祝賀詞(-36), 馬相關成語(-108), 感謝的人事物(-180), 新年新希望(-252), 去年重要的成長(-324)
                 const offsets = [-36, -108, -180, -252, -324];
-                totalDeg = (360 * 7) + (360 + offsets[targetIdx]);
+                totalDeg = (360 * 8) + (offsets[targetIdx]);
             }
             
             wheel.style.transform = `rotate(${totalDeg}deg)`;
@@ -559,14 +591,14 @@
                     resMain.innerText = `🎉 抽中紅包：$${rewards[targetIdx]}！`;
                     resMain.className = "font-black text-2xl text-yellow-800";
                     resSub.innerText = "請現場親友大方給予獎勵吧！";
-                    resultBox.className = "mb-4 p-5 bg-yellow-50 border-2 border-yellow-500 rounded-2xl";
+                    resultBox.className = "mt-6 p-5 bg-yellow-50 border-2 border-yellow-500 rounded-2xl";
                     playSfx('success');
                     createConfetti();
                 } else {
                     resMain.innerText = `📢 任務：說出三個${punishs[targetIdx]}！`;
                     resMain.className = "font-black text-xl text-blue-800";
                     resSub.innerText = "完成此大冒險，這關才算過唷！";
-                    resultBox.className = "mb-4 p-5 bg-blue-50 border-2 border-blue-500 rounded-2xl";
+                    resultBox.className = "mt-6 p-5 bg-blue-50 border-2 border-blue-500 rounded-2xl";
                     playSfx('fail');
                 }
             }, 4200);
