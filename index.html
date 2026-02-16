@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>馬年 16 宮格深度挑戰賽</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 載入 Noto Sans TC 作為微軟正黑體的後備，確保跨平台粗體效果一致 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+
+        :root {
+            --cny-red: #d62828;
+            --cny-gold: #f9d423;
+        }
+
+        /* 全域字體設定為微軟正黑體 */
+        body {
+            background-color: #1a1a1a;
+            background-image: linear-gradient(rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0.75)), 
+                              url('https://media.istockphoto.com/id/2222690159/zh/%E5%90%91%E9%87%8F/2026-year-of-the-horse-vector-new-years-greeting-card-template-with-a-prancing-horse-silhouette.jpg?s=612x612&w=0&k=20&c=SC_ro4OIkUOaT83ENW2SQsCwcimuDXeMOikrwxDRoIs=');
+            background-size: cover;
+            background-position: center;
+            background-attachment: scroll;
+            font-family: "Microsoft JhengHei", "微軟正黑體", "Noto Sans TC", sans-serif;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (min-width: 768px) {
+            body { background-attachment: fixed; }
+        }
+
+        /* 主標題：微軟正黑體 + 超粗體 */
+        .cny-title {
+            font-weight: 900;
+            font-size: clamp(2.2rem, 10vw, 4rem);
+            color: var(--cny-gold);
+            text-shadow: 3px 3px 0px #000;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            z-index: 10;
+            letter-spacing: 2px;
+        }
+
+        /* 次標題：微軟正黑體 + 粗體 */
+        .cny-subtitle {
+            font-weight: 700;
+            font-size: clamp(1rem, 4vw, 1.5rem);
+            color: var(--cny-gold);
+            z-index: 10;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            letter-spacing: 1px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: clamp(8px, 2vw, 15px);
+            max-width: 550px;
+            width: 100%;
+            z-index: 10;
+            touch-action: manipulation;
+        }
+
+        .punch-card {
+            aspect-ratio: 1 / 1;
+            background: linear-gradient(135deg, var(--cny-red), #b21e1e);
+            border: 2px solid var(--cny-gold);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 4px 0px #5e0000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1.2rem, 5vw, 2.2rem);
+            font-weight: 900;
+            color: var(--cny-gold);
+            will-change: transform;
+        }
+
+        @media (hover: hover) {
+            .punch-card:hover:not(.poked) {
+                transform: translateY(-5px);
+                background: #e63946;
+                box-shadow: 0 8px 0px #5e0000;
+            }
+        }
+
+        .punch-card:active:not(.poked) {
+            transform: scale(0.9) translateY(2px);
+            box-shadow: 0 2px 0px #5e0000;
+        }
+
+        .punch-card.poked {
+            background: #2a0000;
+            border-color: #4a0000;
+            color: #444;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
+            transform: scale(0.95);
+            cursor: default;
+        }
+
+        .music-control {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 100;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid var(--cny-gold);
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+        }
+
+        .music-control.muted::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 24px;
+            background: #ff4d4d;
+            transform: rotate(45deg);
+        }
+
+        .logo-link {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 50;
+        }
+
+        .logo-img {
+            height: 42px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 6px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            backdrop-filter: blur(4px);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: #fff;
+            color: #333;
+            padding: clamp(20px, 5vw, 32px);
+            border-radius: 24px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            border: 8px solid var(--cny-gold);
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .option-btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            background: #fffafa;
+            border: 2px solid #fee2e2;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .option-btn:active {
+            background: #fff3cd;
+            border-color: var(--cny-gold);
+            transform: scale(0.98);
+        }
+
+        .footer-info {
+            margin-top: auto;
+            padding: 30px 0 20px;
+            text-align: center;
+            color: rgba(255, 255, 255, 1);
+            font-size: 1.1rem;
+            font-weight: 900; /* 設計者資訊設定為最粗體 */
+            z-index: 10;
+            letter-spacing: 1px;
+        }
+
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 8px;
+            pointer-events: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://cdn.pixabay.com/audio/2022/02/07/audio_27914620f3.mp3" type="audio/mpeg">
+    </audio>
+
+    <div class="music-control" id="musicBtn" onclick="toggleMusic()">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: var(--cny-gold);">
+            <path d="M9 18V5l12-2v13"></path>
+            <circle cx="6" cy="18" r="3"></circle>
+            <circle cx="18" cy="16" r="3"></circle>
+        </svg>
+    </div>
+
+    <h1 class="cny-title">馬到成功戳戳樂</h1>
+    <p class="cny-subtitle text-center px-4">一馬當先！16 道趣味挑戰等你來破！</p>
+
+    <div class="grid-container" id="gridContainer"></div>
+
+    <div class="footer-info">
+        設計者：愛迪樂 鍾孟修 職能治療師
+    </div>
+
+    <a href="https://adlers.tw/" target="_blank" class="logo-link">
+        <img src="https://adlers.tw/wp-content/uploads/2021/05/ADL-LOGO_v2.png" alt="愛迪樂 Logo" class="logo-img">
+    </a>
+
+    <div class="modal" id="gameModal">
+        <div class="modal-content" id="modalContent">
+            <div id="questionView">
+                <div class="flex justify-center mb-3">
+                    <span class="bg-red-50 text-red-600 px-3 py-1 rounded-full text-xs font-bold tracking-widest" id="questionCategory">馬年特選</span>
+                </div>
+                <h2 id="questionText" class="text-xl font-bold mb-6 leading-tight text-gray-800">載入中...</h2>
+                <div id="optionsGroup"></div>
+            </div>
+
+            <div id="resultView" class="hidden">
+                <div id="feedbackIcon" class="text-6xl mb-3">🐎</div>
+                <h3 id="feedbackTitle" class="text-2xl font-bold mb-3"></h3>
+                
+                <div class="mb-4 p-3 bg-green-50 rounded-xl border border-green-100">
+                    <p class="text-[10px] text-green-600 font-bold uppercase mb-1">正確答案</p>
+                    <p id="correctAnswerText" class="text-lg font-black text-green-700"></p>
+                </div>
+
+                <div class="explanation-box">
+                    <p class="font-bold text-gray-800 text-sm mb-1">💡 典故解析</p>
+                    <p id="explanationText" class="text-sm text-gray-700 leading-relaxed"></p>
+                </div>
+
+                <div id="missionBox" class="mt-4 p-3 bg-orange-50 rounded-xl border border-orange-100 hidden">
+                    <p class="text-[10px] font-bold text-orange-500 mb-1">📢 轉運小挑戰</p>
+                    <p id="missionText" class="text-md text-orange-800 font-bold"></p>
+                </div>
+
+                <button onclick="closeModal()" class="mt-6 w-full bg-red-600 text-white px-6 py-4 rounded-2xl font-black text-lg shadow-[0_4px_0_#9d0208] active:translate-y-1 active:shadow-none">
+                    繼續挑戰！
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            { q: "成語「龍馬精神」中的「龍馬」，在古代傳說中是指什麼樣的馬？", a: ["長了翅膀的馬", "馬頭龍身的駿馬", "跑得最快的馬"], correct: 1, exp: "龍馬是古代傳說中一種像龍又像馬的神獸，象徵健旺非凡的精神狀態。" },
+            { q: "歷史上著名的「赤兔馬」曾是哪位傳奇武將的坐騎？", a: ["張飛", "關羽", "趙雲"], correct: 1, exp: "赤兔馬「日行千里，渡水登山」，先後為呂布與關羽效力，是名馬的代名詞。" },
+            { q: "成語「馬到成功」最初是形容什麼樣的場景？", a: ["打仗大獲全勝", "考試考第一名", "做生意發財"], correct: 0, exp: "起源於戰場，形容戰馬一到前線便取得勝利，現在多用於祝賀事情順利達成。" },
+            { q: "在十二生肖中，馬的排列順序是第幾位？", a: ["第五位", "第七位", "第九位"], correct: 1, exp: "生肖順序為：鼠牛虎兔龍蛇馬羊猴雞狗豬。馬排在第七位。" },
+            { q: "傳說中能日行千里的名馬，必須要有誰的賞識才能被發現？", a: ["伯樂", "齊宣王", "秦始皇"], correct: 0, exp: "「世有伯樂，然後有千里馬」。伯樂以善於相馬著稱，比喻能識別人材的人。" },
+            { q: "《西遊記》中，唐三藏騎的「白龍馬」原本是什麼身份？", a: ["一匹普通的野馬", "西海龍王三太子", "天上的天馬"], correct: 1, exp: "白龍馬本是西海龍王之子傲烈，因犯錯被貶，後化為白馬護送唐僧取經。" },
+            { q: "過年時「倒貼福字」的由來，相傳與哪位皇后的機智有關？", a: ["長孫皇后", "馬皇后", "武則天"], correct: 1, exp: "明朝馬皇后為救一家誤將福字貼倒的百姓，笑稱是「福到了」，從此成為習俗。" },
+            { q: "大年初一的第一餐，許多家庭習慣吃「餃子」，是為了求什麼？", a: ["招財進寶", "長命百歲", "步步高升"], correct: 0, exp: "餃子形狀像金元寶，過年吃餃子有財源廣進的吉祥寓意。" },
+            { q: "過年傳統美食「年糕」，其諧音寓意著什麼？", a: ["年年有餘", "年年高升", "合家團圓"], correct: 1, exp: "「年糕」與「年高」諧音，寓意小孩身高長得高，大人事業步步高升。" },
+            { q: "「壓歲錢」中的「歲」，在古代傳說中其實是指什麼？", a: ["時間", "妖獸「祟」", "歲錢"], correct: 1, exp: "傳說「祟」是除夕出現的妖怪，父母用錢放在枕頭下壓住，稱為「壓祟」，後演變為壓歲錢。" },
+            { q: "春聯的祖先被稱為「桃符」，最初是用來幹嘛的？", a: ["寫願望", "裝飾門框", "驅邪避鬼"], correct: 2, exp: "古人將神像刻在桃木板上掛門口，用來震懾鬼神，這就是春聯最早的形式。" },
+            { q: "除夕夜全家人聚在一起吃的這頓飯，正式名稱是什麼？", a: ["團圓飯", "平安飯", "年夜飯"], correct: 2, exp: "年夜飯又稱圍爐，是過年期間最重要的儀式，象徵全家團聚、辭舊迎新。" },
+            { q: "傳說「年獸」最害怕的「三件寶」是什麼？", a: ["大聲公、火把、棍子", "紅紙、火光、響聲", "食物、美酒、音樂"], correct: 1, exp: "年獸怕紅、怕火、怕響。所以過年要貼紅春聯、燃篝火、放鞭炮。" },
+            { q: "大年初五又稱為「破五」，最重要的民俗活動是？", a: ["回娘家", "迎財神", "賞花燈"], correct: 1, exp: "初五是財神的生日，也是商店開張的日子，這天要迎財神，保佑一年財運亨通。" },
+            { q: "「元宵節」通常是在農曆正月的哪一天？", a: ["初一", "初五", "十五"], correct: 2, exp: "正月十五是新年的第一個滿月之夜，稱為元宵節，標誌著春節活動的圓滿結束。" },
+            { q: "古人在過年時會喝「屠蘇酒」，其飲用順序有何特色？", a: ["長者先喝", "由幼及長", "全家一起乾杯"], correct: 1, exp: "古人認為年少者增歲值得慶祝，長者失歲令人感傷，故讓年少者先喝，長者最後喝。" }
+        ];
+
+        const praiseWords = ["馬到成功！", "龍馬精神！", "萬馬奔騰！", "一馬當先！", "才華橫溢！"];
+        const missions = ["學馬鳴叫一聲「嘶～」！", "表演「龍馬精神」跳躍 3 下！", "說出三句「馬」字吉祥話！", "幫身邊的人倒杯水或拿零食！", "擺一個帥氣的騎馬 Pose！"];
+
+        const pokedIndices = new Set();
+        let currentIdx = -1;
+        let audioCtx;
+        const bgMusic = document.getElementById('bgMusic');
+        let isMuted = false;
+
+        function toggleMusic() {
+            isMuted = !isMuted;
+            const btn = document.getElementById('musicBtn');
+            if (isMuted) {
+                bgMusic.pause();
+                btn.classList.add('muted');
+            } else {
+                bgMusic.play();
+                btn.classList.remove('muted');
+            }
+        }
+
+        function playSound(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            if (type === 'success') {
+                oscillator.type = 'triangle';
+                oscillator.frequency.setValueAtTime(523, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1046, audioCtx.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+            } else {
+                oscillator.type = 'sawtooth';
+                oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+                oscillator.frequency.linearRampToValueAtTime(70, audioCtx.currentTime + 0.3);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+            }
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function initGrid() {
+            const container = document.getElementById('gridContainer');
+            for (let i = 0; i < 16; i++) {
+                const card = document.createElement('div');
+                card.className = 'punch-card';
+                card.innerHTML = `<span>${i + 1}</span>`;
+                card.onclick = (e) => handlePoke(i, card);
+                container.appendChild(card);
+            }
+        }
+
+        function handlePoke(index, element) {
+            if (pokedIndices.has(index)) return;
+            
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                if (!isMuted) bgMusic.play().catch(()=>{});
+            }
+
+            currentIdx = index;
+            pokedIndices.add(index);
+            element.classList.add('poked');
+            showQuestion(index);
+        }
+
+        function showQuestion(index) {
+            const data = questions[index];
+            document.getElementById('questionCategory').innerText = (index < 6) ? "馬年特選" : "傳統民俗";
+            document.getElementById('questionText').innerText = data.q;
+            const optionsGroup = document.getElementById('optionsGroup');
+            optionsGroup.innerHTML = '';
+            
+            data.a.forEach((opt, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(i);
+                optionsGroup.appendChild(btn);
+            });
+
+            document.getElementById('questionView').classList.remove('hidden');
+            document.getElementById('resultView').classList.add('hidden');
+            document.getElementById('gameModal').style.display = 'flex';
+        }
+
+        function checkAnswer(selected) {
+            const data = questions[currentIdx];
+            const isCorrect = (selected === data.correct);
+
+            document.getElementById('questionView').classList.add('hidden');
+            const resView = document.getElementById('resultView');
+            resView.classList.remove('hidden');
+
+            const title = document.getElementById('feedbackTitle');
+            const icon = document.getElementById('feedbackIcon');
+            const correctText = document.getElementById('correctAnswerText');
+            const expText = document.getElementById('explanationText');
+            const mBox = document.getElementById('missionBox');
+            const mText = document.getElementById('missionText');
+
+            correctText.innerText = data.a[data.correct];
+            expText.innerText = data.exp;
+
+            if (isCorrect) {
+                playSound('success');
+                icon.innerText = '🔥';
+                title.innerText = praiseWords[Math.floor(Math.random() * praiseWords.length)];
+                title.className = "text-2xl font-bold mb-3 text-red-600 animate-bounce";
+                mBox.classList.add('hidden');
+                createConfetti();
+            } else {
+                playSound('fail');
+                icon.innerText = '🤔';
+                title.innerText = "可惜了！";
+                title.className = "text-2xl font-bold mb-3 text-gray-700";
+                mBox.classList.remove('hidden');
+                mText.innerText = missions[Math.floor(Math.random() * missions.length)];
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('gameModal').style.display = 'none';
+        }
+
+        function createConfetti() {
+            const count = 40;
+            const colors = ['#f9d423', '#d62828', '#ffffff', '#ff8e3c'];
+            for (let i = 0; i < count; i++) {
+                const conf = document.createElement('div');
+                conf.className = 'confetti';
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.top = '-10px';
+                conf.style.transform = `rotate(${Math.random() * 360}deg)`;
+                
+                document.body.appendChild(conf);
+                
+                const animation = conf.animate([
+                    { transform: `translate3d(0, 0, 0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translate3d(${(Math.random() - 0.5) * 200}px, 100vh, 0) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], {
+                    duration: 2000 + Math.random() * 1000,
+                    easing: 'cubic-bezier(0, .9, .57, 1)'
+                });
+
+                animation.onfinish = () => conf.remove();
+            }
+        }
+
+        window.onload = initGrid;
+    </script>
+</body>
+</html>
